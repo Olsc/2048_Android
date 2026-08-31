@@ -1,5 +1,6 @@
 package com.olsc.a2048
 
+import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.os.Bundle
 import android.util.TypedValue
@@ -14,24 +15,37 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity(), BoardView.Listener {
 
     private lateinit var board: BoardView
-    private lateinit var boardGlass: GlassCardView
-    private lateinit var scoreCard: GlassCardView
-    private lateinit var bestCard: GlassCardView
-    private lateinit var newGameBtn: GlassCardView
+    private lateinit var boardGlass: CartoonCardView
+    private lateinit var scoreCard: CartoonCardView
+    private lateinit var bestCard: CartoonCardView
+    private lateinit var newGameBtn: CartoonCardView
+    private lateinit var themeToggleBtn: CartoonCardView
+    private lateinit var themeToggleText: TextView
+    private lateinit var titleText: TextView
+    private lateinit var hintText: TextView
+    private lateinit var scoreLabel: TextView
     private lateinit var scoreValue: TextView
+    private lateinit var bestLabel: TextView
     private lateinit var bestValue: TextView
-    private lateinit var backdrop: GradientBackgroundView
+    private lateinit var newGameBtnText: TextView
+    private lateinit var backdrop: CartoonBackgroundView
     private lateinit var overlay: FrameLayout
-    private lateinit var overlayCard: GlassCardView
+    private lateinit var overlayCard: CartoonCardView
     private lateinit var overlayTitle: TextView
     private lateinit var overlayMessage: TextView
-    private lateinit var overlayPrimaryBtn: GlassCardView
+    private lateinit var overlayPrimaryBtn: CartoonCardView
     private lateinit var overlayPrimaryText: TextView
-    private lateinit var overlaySecondaryBtn: GlassCardView
+    private lateinit var overlaySecondaryBtn: CartoonCardView
+    private lateinit var overlaySecondaryText: TextView
 
     private val prefs by lazy { getSharedPreferences("a2048", MODE_PRIVATE) }
     private var lastBest = 0
     private var wonAnnounced = false
+    private val argbEvaluator = ArgbEvaluator()
+
+    private val themeListener = {
+        applyThemeColors(CartoonThemeManager.themeProgress)
+    }
 
     private companion object {
         const val KEY_GRID = "grid"
@@ -39,6 +53,7 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        CartoonThemeManager.init(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -47,8 +62,15 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         scoreCard = findViewById(R.id.scoreCard)
         bestCard = findViewById(R.id.bestCard)
         newGameBtn = findViewById(R.id.newGameBtn)
+        themeToggleBtn = findViewById(R.id.themeToggleBtn)
+        themeToggleText = findViewById(R.id.themeToggleText)
+        titleText = findViewById(R.id.title)
+        hintText = findViewById(R.id.hintText)
+        scoreLabel = findViewById(R.id.scoreLabel)
         scoreValue = findViewById(R.id.scoreValue)
+        bestLabel = findViewById(R.id.bestLabel)
         bestValue = findViewById(R.id.bestValue)
+        newGameBtnText = findViewById(R.id.newGameBtnText)
         backdrop = findViewById(R.id.backdrop)
         overlay = findViewById(R.id.overlay)
         overlayCard = findViewById(R.id.overlayCard)
@@ -57,24 +79,24 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         overlayPrimaryBtn = findViewById(R.id.overlayPrimaryBtn)
         overlayPrimaryText = findViewById(R.id.overlayPrimaryText)
         overlaySecondaryBtn = findViewById(R.id.overlaySecondaryBtn)
+        overlaySecondaryText = findViewById(R.id.overlaySecondaryText)
 
-        setupGlassCards()
+        CartoonThemeManager.addListener(themeListener)
+
+        setupCards()
         setupButtons()
+        applyThemeColors(CartoonThemeManager.themeProgress)
 
         lastBest = prefs.getInt("best", 0)
         board.listener = this
         board.initBest(lastBest)
 
-        // 等待棋盘完成首次布局后再建瓦片：此时 tileSize 就绪、瓦片已 attach 到窗口，
-        // 弹出动画能正常执行，避免瓦片保持透明导致空棋盘
         val restore = savedInstanceState
         board.post {
             if (restore != null) {
-                // 系统重建：恢复临时状态
                 board.restoreState(restore)
                 wonAnnounced = board.isWon
             } else {
-                // 常规启动：优先恢复上次自动保存的棋局，没有存档则开新局
                 val savedGrid = prefs.getString(KEY_GRID, null)
                 val values = savedGrid?.split(',')?.mapNotNull { it.toIntOrNull() }?.toIntArray()
                 if (values != null && values.size == Game2048.SIZE * Game2048.SIZE) {
@@ -88,6 +110,11 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         }
     }
 
+    override fun onDestroy() {
+        CartoonThemeManager.removeListener(themeListener)
+        super.onDestroy()
+    }
+
     override fun onPause() {
         super.onPause()
         saveGameState()
@@ -98,7 +125,6 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         saveGameState()
     }
 
-    /** 把当前棋局写入 SharedPreferences，下次启动自动恢复。 */
     private fun saveGameState() {
         if (!::board.isInitialized) return
         prefs.edit()
@@ -108,17 +134,32 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
             .apply()
     }
 
-    // ---------- 玻璃卡片 ----------
+    // ---------- 卡通卡片与色彩渐变过渡 ----------
 
-    private fun setupGlassCards() {
-        // 棋盘面板：大圆角 + 内部折射光晕
+    private fun setupCards() {
         boardGlass.cornerRadius = 22f
-        boardGlass.showInnerGlow = true
-        // 得分/最佳卡与按钮：小圆角
-        listOf(scoreCard, bestCard, newGameBtn).forEach { it.cornerRadius = 16f }
+        listOf(scoreCard, bestCard, themeToggleBtn, newGameBtn).forEach { it.cornerRadius = 16f }
         overlayCard.cornerRadius = 28f
-        overlayCard.showInnerGlow = true
         listOf(overlayPrimaryBtn, overlaySecondaryBtn).forEach { it.cornerRadius = 20f }
+    }
+
+    private fun applyThemeColors(progress: Float) {
+        val primaryColor = argbEvaluator.evaluate(progress, 0xFF4A3E3D.toInt(), 0xFFF5EFFB.toInt()) as Int
+        val secondaryColor = argbEvaluator.evaluate(progress, 0xFF8C7A78.toInt(), 0xFFB3A8C5.toInt()) as Int
+
+        titleText.setTextColor(primaryColor)
+        hintText.setTextColor(secondaryColor)
+        scoreLabel.setTextColor(secondaryColor)
+        scoreValue.setTextColor(primaryColor)
+        bestLabel.setTextColor(secondaryColor)
+        bestValue.setTextColor(primaryColor)
+        newGameBtnText.setTextColor(primaryColor)
+        overlayTitle.setTextColor(primaryColor)
+        overlayMessage.setTextColor(secondaryColor)
+        overlayPrimaryText.setTextColor(primaryColor)
+        overlaySecondaryText.setTextColor(primaryColor)
+
+        themeToggleText.text = if (CartoonThemeManager.isNightMode) "🌙" else "☀️"
     }
 
     private fun setupButtons() {
@@ -126,25 +167,58 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
             hideOverlay()
             board.newGame()
         }
+        pressableThemeToggle(themeToggleBtn) {
+            CartoonThemeManager.toggleNightMode(this)
+        }
         pressable(overlayPrimaryBtn) {
-            // 具体行为由 showOverlay 传入的 onPrimary 决定，见 onGameOver/onWon
         }
         pressable(overlaySecondaryBtn) {
             hideOverlay()
         }
     }
 
-    /** 玻璃按钮：按下轻微缩放 + 松手回调。 */
-    private fun pressable(btn: GlassCardView, onClick: () -> Unit) {
+    /** 太阳/月亮旋转 360° 炫酷切换按键 */
+    private fun pressableThemeToggle(btn: CartoonCardView, onClick: () -> Unit) {
         btn.setOnClickListener { onClick() }
         btn.setOnTouchListener { v, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    v.animate().scaleX(0.94f).scaleY(0.94f).setDuration(90L).start()
+                    v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80L).start()
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    v.animate()
+                        .scaleX(1f).scaleY(1f)
+                        .rotationBy(360f)
+                        .setDuration(450L)
+                        .setInterpolator(OvershootInterpolator(1.8f))
+                        .start()
+                    v.performClick()
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(120L).start()
+                }
+            }
+            true
+        }
+    }
+
+    /** 卡通 Q 弹普通按钮 */
+    private fun pressable(btn: CartoonCardView, onClick: () -> Unit) {
+        btn.setOnClickListener { onClick() }
+        btn.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.animate().scaleX(0.88f).scaleY(0.88f).rotation(-2f).setDuration(80L).start()
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.animate().scaleX(1f).scaleY(1f).setDuration(140L).start()
+                    v.animate()
+                        .scaleX(1f).scaleY(1f).rotation(0f)
+                        .setDuration(160L)
+                        .setInterpolator(OvershootInterpolator(2.0f))
+                        .start()
                     if (event.actionMasked == MotionEvent.ACTION_UP) v.performClick()
                 }
             }
@@ -155,14 +229,36 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
     // ---------- BoardView.Listener ----------
 
     override fun onScoreChanged(score: Int, best: Int) {
+        val oldScore = scoreValue.text.toString().toIntOrNull() ?: 0
+        if (score > oldScore) {
+            pulseView(scoreCard)
+        }
+        val oldBest = bestValue.text.toString().toIntOrNull() ?: 0
+        if (best > lastBest) {
+            pulseView(bestCard)
+        }
+
         animateNumber(scoreValue, score)
         animateNumber(bestValue, best)
         if (best > lastBest) {
             lastBest = best
             prefs.edit().putInt("best", best).apply()
         }
-        // 实时存档：每步移动后即写入，进程被强杀也不丢档
         saveGameState()
+    }
+
+    private fun pulseView(view: View) {
+        view.animate()
+            .scaleX(1.16f).scaleY(1.16f)
+            .setDuration(120L)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(160L)
+                    .setInterpolator(OvershootInterpolator(1.8f))
+                    .start()
+            }
+            .start()
     }
 
     override fun onGameOver(score: Int) {
@@ -212,12 +308,13 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         overlay.visibility = View.VISIBLE
         overlay.animate().alpha(1f).setDuration(220L).start()
 
-        overlayCard.scaleX = 0.82f
-        overlayCard.scaleY = 0.82f
+        overlayCard.scaleX = 0.4f
+        overlayCard.scaleY = 0.4f
+        overlayCard.rotation = -4f
         overlayCard.animate()
-            .scaleX(1f).scaleY(1f)
-            .setDuration(340L)
-            .setInterpolator(OvershootInterpolator(1.35f))
+            .scaleX(1f).scaleY(1f).rotation(0f)
+            .setDuration(360L)
+            .setInterpolator(OvershootInterpolator(2.0f))
             .start()
     }
 
@@ -240,13 +337,10 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
             interpolator = DecelerateInterpolator(1.4f)
             addUpdateListener { textView.text = it.animatedValue.toString() }
         }
-        // 快速连滑时取消前一个动画，避免中间值互相覆盖导致回跳闪烁
         if (textView === scoreValue) scoreAnimator?.cancel() else bestAnimator?.cancel()
         if (textView === scoreValue) scoreAnimator = animator else bestAnimator = animator
         animator.start()
     }
-
-    // ---------- 状态保存 ----------
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)

@@ -1,15 +1,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- 深色主题（与默认一致，避免夜间模式闪白） -->
+    <!-- 简约卡通 2048 主题 -->
     <style name="Theme._2048" parent="Theme.MaterialComponents.NoActionBar">
-        <item name="colorPrimary">@color/accent_purple</item>
+        <item name="colorPrimary">@color/accent_blue</item>
         <item name="colorPrimaryVariant">@color/bg_mid</item>
-        <item name="colorOnPrimary">@color/text_on_glass</item>
-        <item name="colorSecondary">@color/accent_cyan</item>
-        <item name="colorSecondaryVariant">@color/accent_pink</item>
-        <item name="colorOnSecondary">@color/text_on_glass</item>
+        <item name="colorOnPrimary">@color/text_primary</item>
+        <item name="colorSecondary">@color/accent_mint</item>
+        <item name="colorSecondaryVariant">@color/accent_yellow</item>
+        <item name="colorOnSecondary">@color/text_primary</item>
         <item name="android:windowBackground">@color/bg_bottom</item>
         <item name="android:statusBarColor">@color/bg_top</item>
         <item name="android:navigationBarColor">@color/bg_bottom</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

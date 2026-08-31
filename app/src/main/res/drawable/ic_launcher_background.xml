@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 2048 图标背景：深紫→深蓝渐变 + 中央柔光（液态玻璃光晕） -->
+<!-- 像素风樱花树背景：温和天空渐变 + 像素云朵 + 飘落像素花瓣 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -7,23 +7,38 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 渐变底色 -->
+    <!-- 渐变底色：粉蓝淡雅天空 ➔ 暖奶油 -->
     <path android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startColor="#3A1F6E"
-                android:endColor="#141B3C"
+                android:startColor="#E6F2FF"
+                android:endColor="#FFF5F7"
                 android:angle="270" />
         </aapt:attr>
     </path>
 
-    <!-- 中央柔光圆（玻璃光晕） -->
+    <!-- 顶部像素云朵 1 -->
     <path
-        android:fillColor="#1EFFFFFF"
-        android:pathData="M54,54m-38,0a38,38 0 1 1 76,0a38,38 0 1 1 -76,0" />
+        android:fillColor="#80FFFFFF"
+        android:pathData="M16,16h24v8h-24z M20,12h16v4h-16z" />
 
-    <!-- 下方小光斑 -->
+    <!-- 顶部像素云朵 2 -->
     <path
-        android:fillColor="#0FFF5E9C"
-        android:pathData="M54,92m-30,0a30,30 0 1 1 60,0a30,30 0 1 1 -60,0" />
+        android:fillColor="#80FFFFFF"
+        android:pathData="M68,18h24v8h-24z M72,14h16v4h-16z" />
+
+    <!-- 飘落像素樱花花瓣 1 (左上) -->
+    <path
+        android:fillColor="#FFB7C5"
+        android:pathData="M18,32h3v3h-3z M28,24h4v4h-4z M12,48h3v3h-3z" />
+
+    <!-- 飘落像素樱花花瓣 2 (右上) -->
+    <path
+        android:fillColor="#FFA0B4"
+        android:pathData="M84,30h4v4h-4z M92,44h3v3h-3z M76,22h3v3h-3z" />
+
+    <!-- 飘落像素樱花花瓣 3 (下方) -->
+    <path
+        android:fillColor="#FF7597"
+        android:pathData="M22,76h3v3h-3z M86,78h4v4h-4z M16,90h3v3h-3z M90,92h3v3h-3z" />
 </vector>

@@ -1,21 +1,19 @@
 package com.olsc.a2048
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.Shader
 import android.graphics.Typeface
 import android.util.TypedValue
 import android.view.View
 
 /**
- * 2048 数字瓦片（Canvas 自绘经典棋子效果）。
- *
- * 经典 2048 配色圆角色块（85% 不透明）+ 顶部高光 + 玻璃描边 + 底部投影，
- * 清晰醒目；棋盘面板与卡片由 GlassCardView 呈现液态玻璃质感。
+ * 2048 数字瓦片（使用 assets 底图 + 自然圆角与高清立体数字）。
  */
 class TileView constructor(context: Context) : View(context) {
 
@@ -27,39 +25,31 @@ class TileView constructor(context: Context) : View(context) {
     var col: Int = -1
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    /** 高清清晰数字画笔 */
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = Typeface.create("sans-serif", Typeface.BOLD)
         textAlign = Paint.Align.CENTER
+        color = 0xFFFFFFFF.toInt()
+        style = Paint.Style.FILL
     }
+
     private val bodyPath = Path()
     private val shadowPath = Path()
     private val bodyRect = RectF()
     private val shadowRect = RectF()
-    private val corner = dp(11f)
+    private val srcRect = Rect()
+    private val corner = dp(13f)
 
-    private var highlightTop: LinearGradient? = null
-    private var bgColor = 0xD9EEE4DA.toInt()
-    private var textColor = COLOR_DARK_TEXT
+    private var bgColor = 0xFFEEE4DA.toInt()
 
     init {
         setWillNotDraw(false)
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        highlightTop = LinearGradient(
-            0f, 0f, 0f, h * 0.55f,
-            intArrayOf(0x78FFFFFF.toInt(), 0x00FFFFFF),
-            floatArrayOf(0f, 1f),
-            Shader.TileMode.CLAMP,
-        )
-    }
-
     fun setValue(v: Int) {
         value = v
-        val (tileColor, textColor) = palette(v)
-        bgColor = (tileColor and 0x00FFFFFF) or 0xD9000000.toInt()
-        this.textColor = textColor
+        bgColor = paletteColor(v)
         invalidate()
     }
 
@@ -67,68 +57,102 @@ class TileView constructor(context: Context) : View(context) {
         val w = width.toFloat()
         val h = height.toFloat()
 
-        // 1) 底部投影：让瓦片像悬浮在玻璃棋盘上
-        val shadowY = dp(3f)
+        if (w <= 0 || h <= 0) return
+
+        // 1) 底部立体柔和阴影
+        val shadowY = dp(3.5f)
         shadowRect.set(0f, shadowY, w, h + shadowY)
         shadowPath.reset()
         shadowPath.addRoundRect(shadowRect, corner, corner, Path.Direction.CW)
         paint.style = Paint.Style.FILL
         paint.shader = null
-        paint.color = 0x2B000000.toInt()
+        paint.color = 0x22000000.toInt()
         canvas.drawPath(shadowPath, paint)
 
-        // 2) 棋子底色（经典 2048 配色，85% 不透明）
+        // 2) 瓦片底图（无粗描边，从 assets 加载 2.png, 4.png... 铺满自然圆角）
         bodyRect.set(0f, 0f, w, h)
         bodyPath.reset()
         bodyPath.addRoundRect(bodyRect, corner, corner, Path.Direction.CW)
-        paint.color = bgColor
-        canvas.drawPath(bodyPath, paint)
 
-        // 3) 顶部高光：模拟玻璃受光面
-        paint.shader = highlightTop
-        canvas.drawPath(bodyPath, paint)
-        paint.shader = null
-
-        // 4) 边缘描边
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = dp(1.2f)
-        paint.color = 0x66FFFFFF.toInt()
-        canvas.drawPath(bodyPath, paint)
-        paint.style = Paint.Style.FILL
-
-        // 5) 数字
-        textPaint.color = textColor
-        textPaint.textSize = when {
-            value < 100 -> dp(30f)
-            value < 1000 -> dp(26f)
-            value < 10000 -> dp(22f)
-            else -> dp(18f)
+        val tileBitmap = TileAssets.getBitmap(context, value)
+        if (tileBitmap != null) {
+            val saveCount = canvas.save()
+            canvas.clipPath(bodyPath)
+            srcRect.set(0, 0, tileBitmap.width, tileBitmap.height)
+            paint.color = 0xFFFFFFFF.toInt()
+            paint.alpha = 255
+            canvas.drawBitmap(tileBitmap, srcRect, bodyRect, paint)
+            canvas.restoreToCount(saveCount)
+        } else {
+            paint.color = bgColor
+            canvas.drawPath(bodyPath, paint)
         }
+
+        // 3) 数字绘制：纯白高清晰文本 + 微距柔和立体阴影（取代生硬黑色描边）
+        val textSize = when {
+            value < 100 -> dp(33f)
+            value < 1000 -> dp(28f)
+            value < 10000 -> dp(23f)
+            else -> dp(19f)
+        }
+        textPaint.textSize = textSize
+        textPaint.setShadowLayer(dp(2.5f), 0f, dp(1.5f), 0x77000000.toInt())
+
+        val text = value.toString()
         val baseline = h / 2f - (textPaint.ascent() + textPaint.descent()) / 2f
-        canvas.drawText(value.toString(), w / 2f, baseline, textPaint)
+
+        canvas.drawText(text, w / 2f, baseline, textPaint)
     }
 
-    /** 经典 2048 配色：棋子底色（RGB）+ 数字色。 */
-    private fun palette(v: Int): Pair<Int, Int> = when (v) {
-        2 -> 0xEEE4DA to COLOR_DARK_TEXT
-        4 -> 0xEDE0C8 to COLOR_DARK_TEXT
-        8 -> 0xF2B179 to COLOR_LIGHT_TEXT
-        16 -> 0xF59563 to COLOR_LIGHT_TEXT
-        32 -> 0xF67C5F to COLOR_LIGHT_TEXT
-        64 -> 0xF65E3B to COLOR_LIGHT_TEXT
-        128 -> 0xEDCF72 to COLOR_LIGHT_TEXT
-        256 -> 0xEDCC61 to COLOR_LIGHT_TEXT
-        512 -> 0xEDC850 to COLOR_LIGHT_TEXT
-        1024 -> 0xEDC53F to COLOR_LIGHT_TEXT
-        2048 -> 0xEDC22E to COLOR_LIGHT_TEXT
-        else -> 0x3C3A32 to COLOR_LIGHT_TEXT
+    /** 兜底纯色底色 */
+    private fun paletteColor(v: Int): Int = when (v) {
+        2 -> 0xFFEEE4DA.toInt()
+        4 -> 0xFFEDE0C8.toInt()
+        8 -> 0xFFF2B179.toInt()
+        16 -> 0xFFF59563.toInt()
+        32 -> 0xFFF67C5F.toInt()
+        64 -> 0xFFF65E3B.toInt()
+        128 -> 0xFFEDCF72.toInt()
+        256 -> 0xFFEDCC61.toInt()
+        512 -> 0xFFEDC850.toInt()
+        1024 -> 0xFFEDC53F.toInt()
+        2048 -> 0xFFEDC22E.toInt()
+        else -> 0xFF3C3A32.toInt()
     }
 
     private fun dp(v: Float): Float =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, resources.displayMetrics)
+}
 
-    private companion object {
-        val COLOR_DARK_TEXT: Int = 0xFF776E65.toInt()
-        val COLOR_LIGHT_TEXT: Int = 0xFFF9F6F2.toInt()
+/** Assets 瓦片底图缓存 */
+private object TileAssets {
+    private val cache = HashMap<Int, Bitmap>()
+
+    fun getBitmap(context: Context, value: Int): Bitmap? {
+        if (value <= 0) return null
+        if (cache.containsKey(value)) return cache[value]
+
+        val bitmap = try {
+            context.assets.open("$value.png").use { stream ->
+                BitmapFactory.decodeStream(stream)
+            }
+        } catch (e: Exception) {
+            if (value > 2048) {
+                try {
+                    context.assets.open("2048.png").use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
+                } catch (e2: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+        }
+
+        if (bitmap != null) {
+            cache[value] = bitmap
+        }
+        return bitmap
     }
 }

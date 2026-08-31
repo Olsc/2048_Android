@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 深色液态玻璃主题 -->
-    <color name="bg_top">#1B1035</color>
-    <color name="bg_bottom">#0B1226</color>
-    <color name="bg_mid">#14204A</color>
+    <!-- 简约卡通风格调预设（温暖米白奶油调，避免粉色泛滥） -->
+    <color name="bg_top">#FFFBF3</color>
+    <color name="bg_mid">#FFF6E5</color>
+    <color name="bg_bottom">#EBF5FB</color>
 
-    <color name="glass_tint">#33FFFFFF</color>
-    <color name="text_primary">#F4F0FF</color>
-    <color name="text_secondary">#B8B2CC</color>
-    <color name="text_on_glass">#FFFFFF</color>
+    <color name="text_primary">#4A3E3D</color>
+    <color name="text_secondary">#8C7A78</color>
+    <color name="text_on_glass">#4A3E3D</color>
 
-    <color name="accent_pink">#FF5E9C</color>
-    <color name="accent_purple">#8E7CFF</color>
-    <color name="accent_cyan">#39C6E8</color>
-    <color name="accent_green">#3BE8B0</color>
+    <color name="accent_yellow">#FFD166</color>
+    <color name="accent_mint">#06D6A0</color>
+    <color name="accent_blue">#118AB2</color>
+    <color name="accent_orange">#FF8800</color>
+
+    <color name="accent_purple">#118AB2</color>
+    <color name="accent_cyan">#06D6A0</color>
+    <color name="accent_pink">#FFD166</color>
 </resources>

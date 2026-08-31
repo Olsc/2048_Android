@@ -24,13 +24,7 @@ import kotlin.math.abs
 import kotlin.math.min
 
 /**
- * 2048 棋盘：管理 4x4 玻璃瓦片、手势滑动与舒适动画。
- *
- * 动画节奏：
- * - 滑动平移：短促缓出（150ms，Decelerate），手感轻快
- * - 合并：目标瓦片轻微弹跳（overshoot），强调"水珠合体"
- * - 被合并瓦片：滑动到位后淡出
- * - 新瓦片：从 0.4 倍大小带弹性弹出
+ * 2048 棋盘：管理 4x4 瓦片、手势滑动与 Q 弹动画。
  */
 class BoardView @JvmOverloads constructor(
     context: Context,
@@ -47,19 +41,11 @@ class BoardView @JvmOverloads constructor(
     private val tiles = Array(Game2048.SIZE) { arrayOfNulls<TileView>(Game2048.SIZE) }
     private var busy = false
 
-    /** 每重建一次棋盘自增，用于拦截过期动画回调污染新状态。 */
     private var generation = 0
 
-    /** 当前得分（供外部查询，如恢复死局存档后展示）。 */
     val scoreNow: Int get() = engine.score
-
-    /** 展平的棋盘值，供持久化。 */
     val gridValues: IntArray get() = engine.flattenedGrid()
-
-    /** 是否已达成 2048（用于恢复存档时抑制重复胜利弹窗）。 */
     val isWon: Boolean get() = engine.won
-
-    /** 是否死局（用于恢复存档时主动提示）。 */
     val isGameOver: Boolean get() = engine.gameOver
 
     private companion object {
@@ -73,23 +59,40 @@ class BoardView @JvmOverloads constructor(
     private val cellPadding = dp(8f)
     private val cellGap = dp(9f)
     private var tileSize = 0f
-    private val slotRadius = dp(9f)
+    private val slotRadius = dp(11f)
 
     private val slotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x26FFFFFF.toInt()
+        style = Paint.Style.FILL
+    }
+    private val slotStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dp(1f)
     }
     private val slotRect = RectF()
 
     private val moveInterpolator: TimeInterpolator = DecelerateInterpolator(1.6f)
-    private val popInterpolator: TimeInterpolator = OvershootInterpolator(1.5f)
+    private val popInterpolator: TimeInterpolator = OvershootInterpolator(2.2f)
 
     private var scrollAccumX = 0f
     private var scrollAccumY = 0f
     private var gestureMoved = false
 
+    private val themeListener = { invalidate() }
+
     init {
-        // 需要绘制 4x4 槽位背景，关闭 willNotDraw 优化
         setWillNotDraw(false)
+        clipChildren = false
+        clipToPadding = false
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        CartoonThemeManager.addListener(themeListener)
+    }
+
+    override fun onDetachedFromWindow() {
+        CartoonThemeManager.removeListener(themeListener)
+        super.onDetachedFromWindow()
     }
 
     private val gestureDetector = GestureDetector(
@@ -102,7 +105,6 @@ class BoardView @JvmOverloads constructor(
                 return true
             }
 
-            /** 拖动累计超过阈值即触发，操作更灵敏（不必等快速甩动）。一次手势最多触发一次。 */
             override fun onScroll(
                 e1: MotionEvent?,
                 e2: MotionEvent,
@@ -112,7 +114,7 @@ class BoardView @JvmOverloads constructor(
                 if (busy || gestureMoved) return true
                 scrollAccumX -= distanceX
                 scrollAccumY -= distanceY
-                val threshold = dp(26f)
+                val threshold = dp(24f)
                 if (abs(scrollAccumX) > threshold || abs(scrollAccumY) > threshold) {
                     val direction = if (abs(scrollAccumX) > abs(scrollAccumY)) {
                         if (scrollAccumX > 0) Direction.RIGHT else Direction.LEFT
@@ -135,7 +137,7 @@ class BoardView @JvmOverloads constructor(
                 val start = e1 ?: return false
                 val dx = e2.x - start.x
                 val dy = e2.y - start.y
-                val threshold = dp(20f)
+                val threshold = dp(18f)
                 val direction = when {
                     abs(dx) > abs(dy) && abs(dx) > threshold -> if (dx > 0) Direction.RIGHT else Direction.LEFT
                     abs(dy) > abs(dx) && abs(dy) > threshold -> if (dy > 0) Direction.DOWN else Direction.UP
@@ -153,7 +155,6 @@ class BoardView @JvmOverloads constructor(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        // wrap_content 时高度 spec 为 UNSPECIFIED（size=0），此时取宽度方向尺寸
         val wSize = MeasureSpec.getSize(widthMeasureSpec)
         val hSize = MeasureSpec.getSize(heightMeasureSpec)
         val size = when {
@@ -163,7 +164,6 @@ class BoardView @JvmOverloads constructor(
             else -> dp(300f).toInt()
         }
         setMeasuredDimension(size, size)
-        // 必须测量子视图（瓦片带固定尺寸的 LayoutParams），否则瓦片尺寸为 0 不可见
         val spec = MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY)
         measureChildren(spec, spec)
     }
@@ -171,8 +171,6 @@ class BoardView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         tileSize = (w - 2 * cellPadding - 3 * cellGap) / Game2048.SIZE.toFloat()
-        // 布局阶段直接修改子 View 参数并 requestLayout 可能不生效，
-        // 统一延迟到布局完成后重排所有瓦片（尺寸/位置），避免启动窗口 resize 时瓦片错乱
         removeCallbacks(relayoutRunnable)
         post(relayoutRunnable)
     }
@@ -188,13 +186,18 @@ class BoardView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // 4x4 槽位背景，让棋盘更接近经典 2048 的网格
+        val isNight = CartoonThemeManager.isNightMode
+
+        slotPaint.color = if (isNight) 0x1AFFFFFF.toInt() else 0x184A3E3D.toInt()
+        slotStrokePaint.color = if (isNight) 0x12FFFFFF.toInt() else 0x124A3E3D.toInt()
+
         for (r in 0 until Game2048.SIZE) {
             for (c in 0 until Game2048.SIZE) {
                 val left = cellX(c)
                 val top = cellY(r)
                 slotRect.set(left, top, left + tileSize, top + tileSize)
                 canvas.drawRoundRect(slotRect, slotRadius, slotRadius, slotPaint)
+                canvas.drawRoundRect(slotRect, slotRadius, slotRadius, slotStrokePaint)
             }
         }
     }
@@ -214,7 +217,6 @@ class BoardView @JvmOverloads constructor(
         listener?.onScoreChanged(engine.score, engine.best)
     }
 
-    /** 用持久化的历史最佳初始化引擎。 */
     fun initBest(value: Int) {
         engine.setBest(value)
     }
@@ -230,7 +232,6 @@ class BoardView @JvmOverloads constructor(
         restoreGrid(gridValues, bundle.getInt(STATE_SCORE), bundle.getInt(STATE_BEST))
     }
 
-    /** 用持久化/存档的数据重建棋盘。 */
     fun restoreGrid(gridValues: IntArray, score: Int, best: Int) {
         generation++
         busy = false
@@ -247,7 +248,6 @@ class BoardView @JvmOverloads constructor(
         }
         listener?.onScoreChanged(engine.score, engine.best)
         if (engine.gameOver) {
-            // 死局存档恢复后主动提示，否则棋盘看起来"卡死"
             val gen = generation
             post { if (gen == generation) listener?.onGameOver(engine.score) }
         }
@@ -274,7 +274,6 @@ class BoardView @JvmOverloads constructor(
         tile.translationY = 0f
         tile.row = r
         tile.col = c
-        // 直接改同一个 LayoutParams 对象后，setLayoutParams 不会再触发重排，必须手动 requestLayout
         tile.requestLayout()
         tiles[r][c] = tile
     }
@@ -300,19 +299,22 @@ class BoardView @JvmOverloads constructor(
         placeTile(tile, r, c)
         tile.setValue(v)
         tile.alpha = 0f
-        tile.scaleX = 0.4f
-        tile.scaleY = 0.4f
+        tile.scaleX = 0.1f
+        tile.scaleY = 0.1f
+        tile.rotation = -8f
+
         tile.animate()
             .alpha(1f)
             .scaleX(1f)
             .scaleY(1f)
-            .setDuration(260L)
+            .rotation(0f)
+            .setDuration(320L)
             .setInterpolator(popInterpolator)
             .withEndAction {
-                // 兜底：动画异常中断时也确保瓦片最终完全可见
                 tile.alpha = 1f
                 tile.scaleX = 1f
                 tile.scaleY = 1f
+                tile.rotation = 0f
             }
             .start()
     }
@@ -320,12 +322,48 @@ class BoardView @JvmOverloads constructor(
     private fun bounceTile(tile: TileView) {
         val bounce = ObjectAnimator.ofPropertyValuesHolder(
             tile,
-            PropertyValuesHolder.ofFloat("scaleX", 1f, 1.16f, 1f),
-            PropertyValuesHolder.ofFloat("scaleY", 1f, 1.16f, 1f),
+            PropertyValuesHolder.ofFloat("scaleX", 1f, 1.28f, 0.88f, 1f),
+            PropertyValuesHolder.ofFloat("scaleY", 1f, 0.78f, 1.18f, 1f),
+            PropertyValuesHolder.ofFloat("rotation", 0f, -5f, 3f, 0f),
         )
-        bounce.duration = 220L
+        bounce.duration = 280L
         bounce.interpolator = DecelerateInterpolator(1.4f)
         bounce.start()
+    }
+
+    private fun showScoreToast(r: Int, c: Int, scoreGain: Int) {
+        if (scoreGain <= 0) return
+        val toast = android.widget.TextView(context).apply {
+            text = "+$scoreGain"
+            setTextColor(0xFFFF8800.toInt())
+            textSize = 22f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setShadowLayer(dp(3f), 0f, dp(1.5f), 0x77000000.toInt())
+        }
+        val lp = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
+        val cx = cellX(c) + tileSize / 2f - dp(18f)
+        val cy = cellY(r) + tileSize / 2f - dp(18f)
+        lp.leftMargin = cx.toInt()
+        lp.topMargin = cy.toInt()
+        toast.layoutParams = lp
+
+        addView(toast)
+
+        toast.scaleX = 0.4f
+        toast.scaleY = 0.4f
+        toast.alpha = 1f
+        toast.animate()
+            .translationY(-dp(45f))
+            .scaleX(1.25f)
+            .scaleY(1.25f)
+            .alpha(0f)
+            .setDuration(560L)
+            .setInterpolator(DecelerateInterpolator(1.3f))
+            .withEndAction { removeView(toast) }
+            .start()
     }
 
     private fun performMove(direction: Direction) {
@@ -350,7 +388,6 @@ class BoardView @JvmOverloads constructor(
             moveAnim.interpolator = moveInterpolator
             moveAnim.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    // 棋盘已被 newGame/restoreState 重建时，丢弃过期回调
                     if (gen != generation || tile.parent !== this@BoardView) return
                     when {
                         anim.consumed -> {
@@ -361,6 +398,7 @@ class BoardView @JvmOverloads constructor(
                             tile.setValue(anim.value)
                             placeTile(tile, anim.toRow, anim.toCol)
                             bounceTile(tile)
+                            showScoreToast(anim.toRow, anim.toCol, anim.value)
                         }
 
                         else -> {

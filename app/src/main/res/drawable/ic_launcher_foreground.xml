@@ -1,25 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 2048 图标前景：2x2 彩色圆角棋子（经典 2048 配色） -->
+<!-- 像素风可爱樱花树图标前景（无任何文字） -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 左上：米色棋子 -->
+    <!-- 1) 底部像素草地山丘 -->
+    <!-- 阴影层 -->
     <path
-        android:fillColor="#EEE4DA"
-        android:pathData="M30,26h12a6,6 0 0 1 6,6v12a6,6 0 0 1 -6,6h-12a6,6 0 0 1 -6,-6v-12a6,6 0 0 1 6,-6z" />
-    <!-- 右上：橙色棋子 -->
+        android:fillColor="#7FB685"
+        android:pathData="M32,88h44v6h-44z M28,90h52v4h-52z" />
+    <!-- 草地亮层 -->
     <path
-        android:fillColor="#F59563"
-        android:pathData="M66,26h12a6,6 0 0 1 6,6v12a6,6 0 0 1 -6,6h-12a6,6 0 0 1 -6,-6v-12a6,6 0 0 1 6,-6z" />
-    <!-- 左下：橙红棋子 -->
+        android:fillColor="#A8E6CF"
+        android:pathData="M34,86h40v4h-40z M38,84h32v2h-32z M42,88h24v2h-24z" />
+
+    <!-- 2) 树干与分叉 (深棕色像素) -->
+    <!-- 树干阴影根部 -->
     <path
-        android:fillColor="#F65E3B"
-        android:pathData="M30,58h12a6,6 0 0 1 6,6v12a6,6 0 0 1 -6,6h-12a6,6 0 0 1 -6,-6v-12a6,6 0 0 1 6,-6z" />
-    <!-- 右下：金色棋子 -->
+        android:fillColor="#4A2E1B"
+        android:pathData="M48,74h12v12h-12z M46,80h16v4h-16z" />
+    <!-- 树干主干 -->
     <path
-        android:fillColor="#EDC22E"
-        android:pathData="M66,58h12a6,6 0 0 1 6,6v12a6,6 0 0 1 -6,6h-12a6,6 0 0 1 -6,-6v-12a6,6 0 0 1 6,-6z" />
+        android:fillColor="#7A4E2D"
+        android:pathData="M50,60h8v24h-8z M48,68h12v10h-12z M52,56h4v8h-4z" />
+    <!-- 树干高光线条 -->
+    <path
+        android:fillColor="#9C6B46"
+        android:pathData="M52,60h2v22h-2z" />
+    <!-- 主树枝左 -->
+    <path
+        android:fillColor="#6E4426"
+        android:pathData="M42,50h10v6h-10z M38,46h6v6h-6z M46,54h6v6h-6z" />
+    <!-- 主树枝右 -->
+    <path
+        android:fillColor="#6E4426"
+        android:pathData="M56,50h10v6h-10z M64,46h6v6h-6z M56,54h6v6h-6z" />
+
+    <!-- 3) 樱花树冠层 1: 底层深粉色/玫瑰阴影像素 -->
+    <path
+        android:fillColor="#E06287"
+        android:pathData="M24,42h60v22h-60z M20,46h68v14h-68z M28,34h52v12h-52z M32,60h44v8h-44z" />
+
+    <!-- 4) 樱花树冠层 2: 中层粉红花簇像素 -->
+    <path
+        android:fillColor="#FF8DA9"
+        android:pathData="M26,38h56v20h-56z M22,44h64v10h-64z M30,30h48v12h-48z M36,26h36v8h-36z M42,22h24v6h-24z M34,54h40v8h-40z" />
+
+    <!-- 5) 樱花树冠层 3: 表层柔和浅粉像素 -->
+    <path
+        android:fillColor="#FFB7C5"
+        android:pathData="M28,36h52v16h-52z M24,42h60v6h-60z M32,28h44v10h-44z M38,24h32v6h-32z M44,20h20v6h-20z M36,50h36v6h-36z" />
+
+    <!-- 6) 樱花树冠层 4: 顶层高光白粉与盛开花朵点缀像素 -->
+    <path
+        android:fillColor="#FFF0F5"
+        android:pathData="M32,32h12v6h-12z M54,26h14v6h-14z M36,42h16v6h-16z M60,40h16v6h-16z M44,48h14v4h-14z M42,22h8v4h-8z M68,32h10v5h-10z" />
+
+    <!-- 纯白亮斑花蕊点缀 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,34h4v4h-4z M58,28h4v4h-4z M40,44h4v4h-4z M64,42h4v4h-4z M48,24h3v3h-3z M72,34h3v3h-3z" />
+
+    <!-- 7) 空中飞舞与随风飘落的像素花瓣 -->
+    <!-- 树左花瓣 -->
+    <path
+        android:fillColor="#FFB7C5"
+        android:pathData="M18,38h4v4h-4z M22,54h3v3h-3z M14,62h4v4h-4z M26,68h3v3h-3z" />
+    <!-- 树右花瓣 -->
+    <path
+        android:fillColor="#FF8DA9"
+        android:pathData="M86,34h4v4h-4z M90,52h3v3h-3z M82,60h4v4h-4z M88,70h3v3h-3z" />
+    <!-- 下落至近地面花瓣 -->
+    <path
+        android:fillColor="#FFD1DC"
+        android:pathData="M30,76h4v3h-4z M74,78h3v3h-3z M40,82h4v2h-4z M66,84h3v2h-3z" />
 </vector>
