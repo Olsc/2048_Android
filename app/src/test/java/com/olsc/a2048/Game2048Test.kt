@@ -156,4 +156,53 @@ class Game2048Test {
         assertEquals(0, consumed!!.toRow)
         assertEquals(0, consumed.toCol)
     }
+
+    @Test
+    fun `smart spawn protects original corner position when large tile shifts`() {
+        val g = Game2048(spawnNewTiles = false)
+        // (0,0) 有大数 1024
+        g.setRow(0, 1024, 512, 256, 128)
+        g.setRow(1, 64, 32, 16, 8)
+        g.setRow(2, 4, 2, 0, 0)
+        g.setRow(3, 2, 0, 0, 0)
+
+        val oldGrid = Array(4) { r -> g.grid[r].clone() }
+        // 误触向右滑动，使 1024 离开 (0,0) 挪到了 (0,1)
+        g.move(Direction.RIGHT)
+
+        // 验证 (0,0) 变空
+        assertEquals(0, g.grid[0][0])
+        assertEquals(1024, g.grid[0][1])
+
+        // 调用智能生成
+        val spawned = g.spawnSmartTile(oldGrid, Direction.RIGHT, isForcedMove = false)
+
+        // 验证生成的位置绝对不能是原本大数所在且现在空出的 (0,0)
+        assertTrue(spawned != null)
+        assertTrue(spawned != (0 to 0))
+        // 验证 (0,0) 仍然为 0，以便玩家滑动切回
+        assertEquals(0, g.grid[0][0])
+    }
+
+    @Test
+    fun `forced move detects single direction and spawns away from large numbers`() {
+        val g = Game2048(spawnNewTiles = false)
+        // 构造仅能向下滑动的局面
+        g.setRow(0, 16, 8, 4, 2)
+        g.setRow(1, 0, 0, 0, 0)
+        g.setRow(2, 0, 0, 0, 0)
+        g.setRow(3, 0, 0, 0, 0)
+
+        val oldGrid = Array(4) { r -> g.grid[r].clone() }
+        val movesCount = g.countValidMoves(oldGrid)
+        assertEquals(1, movesCount) // 仅 DOWN 为有效移动
+
+        g.move(Direction.DOWN)
+
+        val spawned = g.spawnSmartTile(oldGrid, Direction.DOWN, isForcedMove = true)
+        assertTrue(spawned != null)
+
+        // 大数被推到了第 3 行 (r=3)，最远的位置应该在第 0 行 (r=0)
+        assertEquals(0, spawned!!.first)
+    }
 }
