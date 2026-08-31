@@ -25,7 +25,7 @@
         android:paddingEnd="12dp"
         android:paddingBottom="16dp">
 
-        <!-- 顶部：标题 + 得分/最佳卡 + 日夜模式切换 + 新游戏 -->
+        <!-- 顶部：标题 + 得分/最佳卡 + 关于 + 日夜模式切换 + 新游戏 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -52,9 +52,9 @@
 
             <com.olsc.a2048.CartoonCardView
                 android:id="@+id/scoreCard"
-                android:layout_width="64dp"
+                android:layout_width="60dp"
                 android:layout_height="56dp"
-                android:layout_marginEnd="5dp"
+                android:layout_marginEnd="4dp"
                 android:clipChildren="false"
                 android:clipToPadding="false">
 
@@ -80,15 +80,15 @@
                         android:fontFamily="sans-serif-medium"
                         android:text="0"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp" />
+                        android:textSize="17sp" />
                 </LinearLayout>
             </com.olsc.a2048.CartoonCardView>
 
             <com.olsc.a2048.CartoonCardView
                 android:id="@+id/bestCard"
-                android:layout_width="64dp"
+                android:layout_width="60dp"
                 android:layout_height="56dp"
-                android:layout_marginEnd="5dp"
+                android:layout_marginEnd="4dp"
                 android:clipChildren="false"
                 android:clipToPadding="false">
 
@@ -114,16 +114,33 @@
                         android:fontFamily="sans-serif-medium"
                         android:text="0"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp" />
+                        android:textSize="17sp" />
                 </LinearLayout>
+            </com.olsc.a2048.CartoonCardView>
+
+            <!-- 关于按钮 -->
+            <com.olsc.a2048.CartoonCardView
+                android:id="@+id/aboutBtn"
+                android:layout_width="44dp"
+                android:layout_height="56dp"
+                android:layout_marginEnd="4dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="ℹ️"
+                    android:textSize="18sp" />
             </com.olsc.a2048.CartoonCardView>
 
             <!-- 模式切换按钮：☀️ 日间 / 🌙 夜间 -->
             <com.olsc.a2048.CartoonCardView
                 android:id="@+id/themeToggleBtn"
-                android:layout_width="48dp"
+                android:layout_width="44dp"
                 android:layout_height="56dp"
-                android:layout_marginEnd="5dp"
+                android:layout_marginEnd="4dp"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -133,12 +150,12 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:text="☀️"
-                    android:textSize="20sp" />
+                    android:textSize="18sp" />
             </com.olsc.a2048.CartoonCardView>
 
             <com.olsc.a2048.CartoonCardView
                 android:id="@+id/newGameBtn"
-                android:layout_width="54dp"
+                android:layout_width="52dp"
                 android:layout_height="56dp"
                 android:clickable="true"
                 android:focusable="true">
@@ -193,6 +210,94 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
     </LinearLayout>
+
+    <!-- 关于页面 遮罩弹窗 -->
+    <FrameLayout
+        android:id="@+id/aboutOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <com.olsc.a2048.CartoonCardView
+            android:id="@+id/aboutCard"
+            android:layout_width="310dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/ic_launcher_foreground" />
+
+                <TextView
+                    android:id="@+id/aboutTitleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="sans-serif-black"
+                    android:text="@string/about_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/aboutAuthorText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="@string/about_author"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+                <!-- 开源项目 URL 链接 -->
+                <TextView
+                    android:id="@+id/aboutLinkText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="@string/about_link"
+                    android:textColor="@color/accent_blue"
+                    android:textSize="13sp" />
+
+                <com.olsc.a2048.CartoonCardView
+                    android:id="@+id/aboutCloseBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingStart="32dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="32dp"
+                    android:paddingBottom="12dp">
+
+                    <TextView
+                        android:id="@+id/aboutCloseBtnText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/about_close"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
+                </com.olsc.a2048.CartoonCardView>
+            </LinearLayout>
+        </com.olsc.a2048.CartoonCardView>
+    </FrameLayout>
 
     <!-- 游戏结束 / 胜利遮罩 -->
     <FrameLayout

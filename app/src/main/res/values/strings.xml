@@ -10,5 +10,9 @@
     <string name="you_won_hint">合成 2048，继续挑战更高分</string>
     <string name="play_again">再来一局</string>
     <string name="keep_going">继续</string>
-    <string name="hint_swipe">滑动玻璃棋盘，合并相同数字</string>
+    <string name="hint_swipe">滑动棋盘，合并相同数字</string>
+    <string name="about_title">关于 2048</string>
+    <string name="about_author">由 Olsc 制作的开源项目</string>
+    <string name="about_link">https://github.com/Olsc/2048_Android</string>
+    <string name="about_close">关闭</string>
 </resources>

@@ -2,6 +2,8 @@ package com.olsc.a2048
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.MotionEvent
@@ -21,6 +23,7 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
     private lateinit var newGameBtn: CartoonCardView
     private lateinit var themeToggleBtn: CartoonCardView
     private lateinit var themeToggleText: TextView
+    private lateinit var aboutBtn: CartoonCardView
     private lateinit var titleText: TextView
     private lateinit var hintText: TextView
     private lateinit var scoreLabel: TextView
@@ -37,6 +40,13 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
     private lateinit var overlayPrimaryText: TextView
     private lateinit var overlaySecondaryBtn: CartoonCardView
     private lateinit var overlaySecondaryText: TextView
+    private lateinit var aboutOverlay: FrameLayout
+    private lateinit var aboutCard: CartoonCardView
+    private lateinit var aboutTitleText: TextView
+    private lateinit var aboutAuthorText: TextView
+    private lateinit var aboutLinkText: TextView
+    private lateinit var aboutCloseBtn: CartoonCardView
+    private lateinit var aboutCloseBtnText: TextView
 
     private val prefs by lazy { getSharedPreferences("a2048", MODE_PRIVATE) }
     private var lastBest = 0
@@ -50,6 +60,7 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
     private companion object {
         const val KEY_GRID = "grid"
         const val KEY_SCORE = "score"
+        const val GITHUB_URL = "https://github.com/Olsc/2048_Android"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +75,7 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         newGameBtn = findViewById(R.id.newGameBtn)
         themeToggleBtn = findViewById(R.id.themeToggleBtn)
         themeToggleText = findViewById(R.id.themeToggleText)
+        aboutBtn = findViewById(R.id.aboutBtn)
         titleText = findViewById(R.id.title)
         hintText = findViewById(R.id.hintText)
         scoreLabel = findViewById(R.id.scoreLabel)
@@ -80,6 +92,13 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         overlayPrimaryText = findViewById(R.id.overlayPrimaryText)
         overlaySecondaryBtn = findViewById(R.id.overlaySecondaryBtn)
         overlaySecondaryText = findViewById(R.id.overlaySecondaryText)
+        aboutOverlay = findViewById(R.id.aboutOverlay)
+        aboutCard = findViewById(R.id.aboutCard)
+        aboutTitleText = findViewById(R.id.aboutTitleText)
+        aboutAuthorText = findViewById(R.id.aboutAuthorText)
+        aboutLinkText = findViewById(R.id.aboutLinkText)
+        aboutCloseBtn = findViewById(R.id.aboutCloseBtn)
+        aboutCloseBtnText = findViewById(R.id.aboutCloseBtnText)
 
         CartoonThemeManager.addListener(themeListener)
 
@@ -138,9 +157,9 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
 
     private fun setupCards() {
         boardGlass.cornerRadius = 22f
-        listOf(scoreCard, bestCard, themeToggleBtn, newGameBtn).forEach { it.cornerRadius = 16f }
-        overlayCard.cornerRadius = 28f
-        listOf(overlayPrimaryBtn, overlaySecondaryBtn).forEach { it.cornerRadius = 20f }
+        listOf(scoreCard, bestCard, aboutBtn, themeToggleBtn, newGameBtn).forEach { it.cornerRadius = 16f }
+        listOf(overlayCard, aboutCard).forEach { it.cornerRadius = 28f }
+        listOf(overlayPrimaryBtn, overlaySecondaryBtn, aboutCloseBtn).forEach { it.cornerRadius = 20f }
     }
 
     private fun applyThemeColors(progress: Float) {
@@ -158,6 +177,9 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         overlayMessage.setTextColor(secondaryColor)
         overlayPrimaryText.setTextColor(primaryColor)
         overlaySecondaryText.setTextColor(primaryColor)
+        aboutTitleText.setTextColor(primaryColor)
+        aboutAuthorText.setTextColor(secondaryColor)
+        aboutCloseBtnText.setTextColor(primaryColor)
 
         themeToggleText.text = if (CartoonThemeManager.isNightMode) "🌙" else "☀️"
     }
@@ -165,10 +187,24 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
     private fun setupButtons() {
         pressable(newGameBtn) {
             hideOverlay()
+            hideAboutOverlay()
             board.newGame()
         }
         pressableThemeToggle(themeToggleBtn) {
             CartoonThemeManager.toggleNightMode(this)
+        }
+        pressable(aboutBtn) {
+            showAboutOverlay()
+        }
+        pressable(aboutCloseBtn) {
+            hideAboutOverlay()
+        }
+        aboutLinkText.setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL))
+                startActivity(intent)
+            } catch (_: Exception) {
+            }
         }
         pressable(overlayPrimaryBtn) {
         }
@@ -177,7 +213,7 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
         }
     }
 
-    /** 太阳/月亮旋转 360° 炫酷切换按键 */
+    /** 太阳/月亮旋转 360° 切换按键 */
     private fun pressableThemeToggle(btn: CartoonCardView, onClick: () -> Unit) {
         btn.setOnClickListener { onClick() }
         btn.setOnTouchListener { v, event ->
@@ -224,6 +260,31 @@ class MainActivity : AppCompatActivity(), BoardView.Listener {
             }
             true
         }
+    }
+
+    // ---------- 关于页面弹窗动画 ----------
+
+    private fun showAboutOverlay() {
+        aboutOverlay.alpha = 0f
+        aboutOverlay.visibility = View.VISIBLE
+        aboutOverlay.animate().alpha(1f).setDuration(220L).start()
+
+        aboutCard.scaleX = 0.4f
+        aboutCard.scaleY = 0.4f
+        aboutCard.rotation = -3f
+        aboutCard.animate()
+            .scaleX(1f).scaleY(1f).rotation(0f)
+            .setDuration(360L)
+            .setInterpolator(OvershootInterpolator(1.8f))
+            .start()
+    }
+
+    private fun hideAboutOverlay() {
+        aboutOverlay.animate()
+            .alpha(0f)
+            .setDuration(180L)
+            .withEndAction { aboutOverlay.visibility = View.GONE }
+            .start()
     }
 
     // ---------- BoardView.Listener ----------
